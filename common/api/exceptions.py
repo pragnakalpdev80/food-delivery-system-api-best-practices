@@ -135,7 +135,7 @@ def custom_exception_handler(exc, context):
         # Log with full context for forensic investigation (M-05)
         logger.exception(
             f"Unexpected error: {exc.__class__.__name__}: {exc} | "
-            f"user={user_id} | ip={ip} | user_agent={user_agent} | "
+            f"user={user_id} | ip={ip} | "
             f"path={request.path if request else 'unknown'} | "
             f"method={request.method if request else 'unknown'}"
         )

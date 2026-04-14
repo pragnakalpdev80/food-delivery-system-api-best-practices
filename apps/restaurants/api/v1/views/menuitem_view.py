@@ -7,7 +7,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated
 from apps.restaurants.api.v1.serializers.menuitem_serializers import  MenuItemSerializer
-from apps.restaurants.models import MenuItem
+from apps.restaurants.selectors.menuitem_selector import MenuItemSelector
 from common.utils.permissions import IsRestaurantOwner
 from common.api.pagination import MenuItemPageNumberPagination
 from common.api.filters import MenuItemFilter
@@ -85,11 +85,9 @@ class MenuItemViewSet(viewsets.ModelViewSet):
         Owners can create, update and delete own restaurants items.
         """
         if not self.request.user.is_authenticated:
-            return MenuItem.objects.none()
+            return MenuItemSelector.get_none_menu()
         user = self.request.user
-        if user.user_type == 'restaurant_owner':
-            return MenuItem.objects.filter(restaurant__owner=user,is_deleted=False).select_related('restaurant')
-        return MenuItem.objects.filter(is_available=True,is_deleted=False).select_related('restaurant')
+        return MenuItemSelector.get_menuitem_queryset(user=user)
 
     def perform_destroy(self, instance):
         """ Method to soft delete the menu items. """

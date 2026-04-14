@@ -1,4 +1,4 @@
-from rest_framework.throttling import UserRateThrottle
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 class OrderCreateThrottle(UserRateThrottle):
     """
@@ -20,3 +20,16 @@ class LocationUpdateThrottle(UserRateThrottle):
     """
     scope = 'location_update'
     rate = '500/hour'
+
+class LoginRateThrottle(AnonRateThrottle):
+    """
+    Login Endpoint Throttle
+    """
+    scope = 'login'
+
+
+class RegistrationRateThrottle(AnonRateThrottle):
+    """
+    registrayion endpoint throttle
+    """
+    scope = 'registration'

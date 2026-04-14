@@ -3,7 +3,7 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from apps.users.api.v1.serializers.driver_serializers import DriverProfileSerializer
-from apps.users.models import DriverProfile
+from apps.users.selectors.user_selector import UserSelector
 from common.utils.permissions import IsDriver
 
 logger = logging.getLogger(__name__)
@@ -49,8 +49,8 @@ class DriverViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """ Queryset to get drivers can only access own profile. """
         if not self.request.user.is_authenticated:
-            return DriverProfile.objects.none()
-        return DriverProfile.objects.select_related('user').filter(user=self.request.user,is_deleted=False)
+            return UserSelector.get_none_driver()
+        return UserSelector.get_driver_profile_queryset(user=self.request.user)
 
     def perform_destroy(self, instance):
         """ Method to soft delete the driver profile. """

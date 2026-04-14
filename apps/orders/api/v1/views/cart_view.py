@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from apps.orders.models import Cart
 from apps.orders.api.v1.serializers.cart_serializers import CartSerializer
+from apps.orders.selectors.cart_selector import CartSelector
 from common.utils.permissions import IsCustomer
 
 logger = logging.getLogger(__name__)
@@ -53,8 +54,8 @@ class CartViewSet(viewsets.ModelViewSet):
         Customers can only access their own cart only.
         """
         if not self.request.user.is_authenticated:
-            return Cart.objects.none()
-        return Cart.objects.prefetch_related('cart_items', 'cart_items__menu_item').filter(customer=self.request.user.customer_profile)
+            return CartSelector.get_none_cart()
+        return CartSelector.get_cart_queryset(user=self.request.user.customer_profile)
 
     @action(detail=False, methods=['delete'], url_path='clear')
     def clear(self, request):

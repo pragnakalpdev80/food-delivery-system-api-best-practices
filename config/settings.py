@@ -166,6 +166,8 @@ REST_FRAMEWORK = {
         'order_create': '20/hour',
         'review_create': '10/hour',
         'location_update': '500/hour',
+        'login': '5/hour',
+        'registration':'5/hour',
     },
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     'DEFAULT_VERSION': 'v1',
@@ -245,7 +247,7 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.config.RedisChannelLayer',
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
             "hosts": [('127.0.0.1', 6379)],
         },

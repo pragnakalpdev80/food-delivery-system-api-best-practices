@@ -98,11 +98,14 @@ def custom_exception_handler(exc, context):
         
         
         # Log error
-        user_id = request.user.id if request.user.is_authenticated else 'anonymous'
+        user_id = request.user.id if request and request.user.is_authenticated else 'anonymous'
+        ip = request.META.get('REMOTE_ADDR', 'unknown') if request else 'unknown'
+        user_agent = request.META.get('HTTP_USER_AGENT', 'unknown') if request else 'unknown'
         logger.error(
             f"Error {error_data['error']['status_code']}: {exc} | "
             f"user={user_id} | "
-            f"ip={request.META.get('REMOTE_ADDR', 'unknown') if request else 'unknown'} | "
+            f"ip={ip} | "
+            f"user_agent={user_agent} | "
             f"path={request.path if request else 'unknown'} | "
             f"method={request.method if request else 'unknown'}",
             exc_info=settings.DEBUG
@@ -111,6 +114,11 @@ def custom_exception_handler(exc, context):
         response.data = error_data['error']
     # Handle unexpected errors (500)
     else:
+        request = context.get('request') if context else None
+        user_id = request.user.id if request and request.user.is_authenticated else 'anonymous'
+        ip = request.META.get('REMOTE_ADDR', 'unknown') if request else 'unknown'
+        user_agent = request.META.get('HTTP_USER_AGENT', 'unknown') if request else 'unknown'
+
         error_data = {
             'success': False,
             'error': {
@@ -118,13 +126,20 @@ def custom_exception_handler(exc, context):
                 'message': 'Internal server error',
                 'details': {
                     'code': 'server_error',
+                    # L-06: Never expose exception class name in response — only in logs
                     'message': str(exc) if settings.DEBUG else 'An unexpected error occurred'
-                }},
-                'type': exc.__class__.__name__}
-        
-        # Log unexpected errors
-        logger.exception(f"Unexpected error: {exc}")
-        
+                }
+            }
+        }
+
+        # Log with full context for forensic investigation (M-05)
+        logger.exception(
+            f"Unexpected error: {exc.__class__.__name__}: {exc} | "
+            f"user={user_id} | ip={ip} | user_agent={user_agent} | "
+            f"path={request.path if request else 'unknown'} | "
+            f"method={request.method if request else 'unknown'}"
+        )
+
         response = Response(error_data['error'], status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     return response

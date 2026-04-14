@@ -7,6 +7,7 @@ from .views import (
     user_view
 )
 
+
 app_name = "users"
 
 router = DefaultRouter()

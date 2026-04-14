@@ -3,8 +3,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from apps.users.api.v1.serializers.customer_serializers import CustomerProfileSerializer
-from apps.users.models import CustomerProfile
 from common.utils.permissions import IsCustomer
+from apps.users.selectors.user_selector import UserSelector
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +50,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """ Queryset to get customer can only access own profile. """
         if not self.request.user.is_authenticated:
-            return CustomerProfile.objects.none()
-        return CustomerProfile.objects.select_related('user').filter(
-            user=self.request.user,is_deleted=False)
+            return UserSelector.get_none_customer()
+        return UserSelector.get_customer_profile_queryset(user=self.request.user)
 
     def perform_destroy(self, instance):
         """ Method to soft delete the customer. """

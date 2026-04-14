@@ -2,8 +2,8 @@ import logging
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from apps.orders.models import CartItem
 from apps.orders.api.v1.serializers.cartitem_serializers import CartItemSerializer
+from apps.orders.selectors.cart_selector import CartSelector
 from common.utils.permissions import IsCustomer
 
 logger = logging.getLogger(__name__)
@@ -63,5 +63,5 @@ class CartItemViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """ customers can only acccess their own cart items only. """
         if not self.request.user.is_authenticated:
-            return CartItem.objects.none()
-        return CartItem.objects.filter(cart__customer=self.request.user.customer_profile).select_related('menu_item')
+            return CartSelector.get_none_cartitem()
+        return CartSelector.get_cartitem_queryset(user=self.request.user.customer_profile)

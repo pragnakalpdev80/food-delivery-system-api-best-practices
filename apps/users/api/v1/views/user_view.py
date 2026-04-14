@@ -2,10 +2,13 @@ import logging
 import logging
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, generics
+from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.users.api.v1.serializers.user_serializers import UserRegistrationSerializer
 from apps.users.models import User
+from common.api.throttles import RegistrationRateThrottle
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +37,7 @@ class UserRegistrationView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)   
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        throttle_classes=[RegistrationRateThrottle]
         refresh = RefreshToken.for_user(user)
         
         return Response({

@@ -4,13 +4,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated
-from apps.orders.models import Review
 from apps.orders.api.v1.serializers.review_serializers import ReviewSerializer
 from common.utils.permissions import IsOrderCustomer
 from common.api.filters import ReviewFilter
 from common.api.throttles import ReviewCreateThrottle
 from common.api.pagination import ReviewLimitOffsetPagination
-
+from apps.orders.selectors.review_selector import ReviewSelector
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +58,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         """ Customers can only see their own reviews. """
         user = self.request.user
         if not user.is_authenticated:
-            return Review.objects.none()
-        return Review.objects.filter(customer__user=user)
+            return ReviewSelector.get_none_review()
+        return ReviewSelector.get_review_queryset(user=user)
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)

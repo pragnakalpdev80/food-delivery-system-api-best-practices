@@ -3,9 +3,9 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.response import Response
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
-from apps.orders.models import OrderItem
 from apps.orders.api.v1.serializers.orderitem_serializers import OrderItemSerializer
 from common.utils.permissions import IsOrderCustomer
+from apps.orders.selectors.order_selector import OrderSelector
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +44,8 @@ class OrderItemViewSet(viewsets.ModelViewSet):
         """
         user = self.request.user
         if not self.request.user.is_authenticated:
-            return OrderItem.objects.none()
-        if user.user_type == 'customer':
-            return OrderItem.objects.filter(order__customer__user=user)
-        elif user.user_type == 'restaurant_owner':
-            return OrderItem.objects.filter(order__restaurant__owner=user)
-        elif user.user_type == 'delivery_driver':
-            return OrderItem.objects.filter(order__driver__user=user)
-        return OrderItem.objects.none()
+            return OrderSelector.get_none_orderitem()
+        OrderSelector.get_order_items_for_user(user=user)
 
     def retrieve(self, request, *args, **kwargs):
         """ Override retrieve to enforce object-level permission on order items. """

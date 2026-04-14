@@ -3,8 +3,9 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
 from apps.users.api.v1.serializers.address_serializers import AddressSerializer
-from apps.users.models import Address
 from common.utils.permissions import IsCustomer
+from apps.users.selectors.user_selector import UserSelector
+
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +65,8 @@ class AddressViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """ Only customers can manage own addresses only"""
         if not self.request.user.is_authenticated:
-            return Address.objects.none()
-        return Address.objects.select_related('user').filter(user = self.request.user,is_deleted=False)
+            return UserSelector.get_none_address()
+        return UserSelector.get_address_queryset(user=self.request.user)
     
     def perform_destroy(self, instance):
         """ Method to soft delete the address. """

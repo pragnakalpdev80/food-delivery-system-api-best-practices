@@ -24,13 +24,15 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,     # POST /api/token/refresh/ - Get new access token
     TokenVerifyView,      # POST /api/token/verify/ - Check if token is valid
 )
+from common.api.throttles import LoginRateThrottle
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('apps.users.api.v1.urls')),
     path('api/v1/', include('apps.restaurants.api.v1.urls')),
     path('api/v1/', include('apps.orders.api.v1.urls')),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', TokenObtainPairView.as_view(throttle_classes=[LoginRateThrottle]), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

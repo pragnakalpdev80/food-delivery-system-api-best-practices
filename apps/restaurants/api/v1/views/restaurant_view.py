@@ -10,10 +10,12 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from apps.restaurants.api.v1.serializers.restaurant_serializers import  RestaurantSerializer, RestaurantDetailSerializer
 from apps.restaurants.api.v1.serializers.menuitem_serializers import  MenuItemSerializer
-from apps.restaurants.models import  Restaurant, MenuItem
+from apps.restaurants.models import   MenuItem
 from common.utils.permissions import IsRestaurantOwner, IsOwnerOrReadOnly
 from common.api.pagination import RestaurantPageNumberPagination
 from common.api.filters import RestaurantFilter
+from apps.restaurants.selectors.restaurant_selector import RestaurantSelector
+from apps.restaurants.selectors.menuitem_selector import MenuItemSelector
 
 logger = logging.getLogger(__name__)
 
@@ -101,10 +103,10 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         """
         user = self.request.user
         if not user.is_authenticated:
-            return Restaurant.objects.none()
+            return RestaurantSelector.get_none_restaurant()
         if self.action in ['list', 'retrieve', 'menu', 'popular']:
-            return Restaurant.objects.filter(is_deleted=False)
-        return Restaurant.objects.filter(owner=user, is_deleted=False)
+            return RestaurantSelector.get_restaurant_queryset()
+        return RestaurantSelector.get_own_restaurant_queryset(user=user)
     
     def get_permissions(self):
         """
@@ -126,7 +128,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         """ Method to soft delete the restaurant. """
         instance.is_deleted = True
-        menu_items = MenuItem.objects.filter(restaurant=instance.id,is_deleted=False)
+        menu_items = MenuItemSelector.get_menuitems_of_restaurants(restaurant=instance)
         for menu_item in menu_items:
             menu_item.is_deleted = True
             menu_item.save()
@@ -155,8 +157,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
     def menu(self, request,  *args, **kwargs):
         """ Created a custom menu method to get menu of the restaurant with 15 minutes of cache. """
         restaurant = self.get_object()
-        items = MenuItem.objects.select_related('restaurant').filter(restaurant_id=restaurant.id, is_available=True)
-          # print(items)
+        items = MenuItemSelector.get_restaurant_menu(restaurant)
         serializer = MenuItemSerializer(items, many=True, context={'request': request})
         return Response(serializer.data,status=status.HTTP_200_OK)
     
@@ -167,7 +168,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         cached_data = cache.get(cache_key)
         logger.info(cached_data)
         if cached_data is None:
-            popular = Restaurant.objects.filter(is_open=True,is_deleted=False).order_by('-average_rating')
+            popular = RestaurantSelector.get_popular_restaurants()
             serializer = RestaurantSerializer(popular, many=True, context={'request': request})
             cached_data = serializer.data
             cache.set(cache_key, cached_data, 1800)

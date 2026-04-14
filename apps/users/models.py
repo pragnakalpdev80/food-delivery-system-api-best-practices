@@ -12,8 +12,8 @@ class User(AbstractUser, TimestampedModel, SoftDeleteModel):
    phone_no = models.CharField(max_length = 10,unique=True)
    user_type = models.CharField(choices=USER_TYPE_CHOICES)
 
-   USERNAME_FIELD = 'email'
-   REQUIRED_FIELDS = ['phone_no']
+#    USERNAME_FIELD = 'email'
+#    REQUIRED_FIELDS = ['phone_no']
    
    def __str__(self):
        return f"{self.username} ({self.user_type})"

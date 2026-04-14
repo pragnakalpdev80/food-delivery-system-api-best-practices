@@ -8,8 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from apps.orders.models import Order
 from apps.orders.api.v1.serializers.order_serializers import OrderCreateSerializer,OrderSerializer, OrderDetailSerializer
+from apps.orders.selectors.order_selector import OrderSelector
 from common.utils.permissions import IsRestaurantOwner, IsRestaurantOwnerOrDriver, IsOwnerOrReadOnly, IsCustomer
 from common.api.filters import OrderFilter
 from common.api.throttles import OrderCreateThrottle
@@ -73,6 +73,14 @@ logger = logging.getLogger(__name__)
         },
         tags=['Order']
     ),
+    create=extend_schema(
+        summary="Create Order",
+        description = "Customer can order from cart only",
+        responses={
+            405:{}
+        },
+        tags=['Order']
+    ),
 )
 class OrderViewSet(viewsets.ModelViewSet):
     """ Order ViewSet to manage the order of customers. """
@@ -120,14 +128,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         """
         user = self.request.user
         if not self.request.user.is_authenticated:
-            return Order.objects.none()
-        qs = Order.objects.select_related('customer', 'restaurant', 'driver').prefetch_related('menu_item')
-        if user.user_type == 'customer':
-            return qs.filter(customer__user=user)
-        elif user.user_type == 'restaurant_owner':
-            return qs.filter(restaurant__owner=user)
-        elif user.user_type == 'delivery_driver':
-            return qs.filter(driver__user=user)       
+            return OrderSelector.get_none_order()
+        OrderSelector.get_order_queryset(user=user)
     
     @action(detail=False, methods=['post'], url_path='place', throttle_classes=[OrderCreateThrottle])
     def place(self, request, *args, **kwargs):
@@ -137,19 +139,9 @@ class OrderViewSet(viewsets.ModelViewSet):
         if request.user.user_type != 'customer':
             return Response({'message': 'Only customers can place orders.'}, status=status.HTTP_403_FORBIDDEN)
         serializer = self.get_serializer(data=request.data, context={'request': request})
-          # print(serializer)
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
-        # web socket
-        # channel_layer = get_channel_layer()
-        # async_to_sync(channel_layer.group_send)(
-        #     f"restaurant_{order.restaurant.id}",
-        #     {
-        #         "type": "new_order",
-        #         "order_id": str(order.order_number),
-        #         "message": "New order received!"
-        #     }
-        # )
+      
         return Response(OrderDetailSerializer(order, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='cancel')
@@ -159,7 +151,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         """
         order = self.get_object()
         user_type = request.user.user_type
-         # print(user_type)
         if user_type == 'delivery_driver':
             return Response({'error': 'Driver cannot cancel the order.'}, status=status.HTTP_400_BAD_REQUEST)
         if not order.can_cancel():
@@ -168,10 +159,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save(update_fields=['status', 'updated_at'])
         if order.driver:
             driver = DriverProfile.objects.filter(id=order.driver.id).first()
-             # print(driver)
             driver.update_availability(True)
             driver.save(update_fields=['updated_at','is_available'])
-        #web socket
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f"restaurant_{order.restaurant.id}",
@@ -296,7 +285,6 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
         return Response({'success': f'Order status updated to {new_status}.'},status=status.HTTP_200_OK)
 
-    # doubt maybe wrong logic
     @action(detail=True, methods=['post'], url_path='assign-driver')
     def assign_driver(self, request,  *args, **kwargs):
         """

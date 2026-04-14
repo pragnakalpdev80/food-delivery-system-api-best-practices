@@ -1,7 +1,4 @@
 import logging
-from django.core.cache import cache
-from django.views.decorators.cache import cache_page
-from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets, filters
@@ -11,6 +8,7 @@ from apps.restaurants.selectors.menuitem_selector import MenuItemSelector
 from common.utils.permissions import IsRestaurantOwner
 from common.api.pagination import MenuItemPageNumberPagination
 from common.api.filters import MenuItemFilter
+from apps.restaurants.services.menuitem_service import MenuItemService
 
 logger = logging.getLogger(__name__)
 
@@ -91,20 +89,16 @@ class MenuItemViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """ Method to soft delete the menu items. """
-        instance.is_deleted = True
-        instance.save()
+        MenuItemService.soft_delete_menu(item=instance)
+        MenuItemService.clear_cache()
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
-        cache.delete_many(['list_restaurant','retrieve_restaurant','restaurant_menu'])
+        MenuItemService.clear_cache()
         return response
     
     def partial_update(self, request, *args, **kwargs):
         response = super().partial_update(request, *args, **kwargs)
-        cache.delete_many(['list_restaurant','retrieve_restaurant','restaurant_menu'])
+        MenuItemService.clear_cache()
         return response
     
-    def destroy(self, request, *args, **kwargs):
-        response = super().destroy(request, *args, **kwargs)
-        cache.delete_many(['list_restaurant','retrieve_restaurant','restaurant_menu'])
-        return response

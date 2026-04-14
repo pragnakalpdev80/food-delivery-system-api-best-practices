@@ -26,13 +26,10 @@ class UserSelector:
         return CustomerProfile.objects.none()
 
     @staticmethod
-    def get_driver_profile(*, user):
+    def get_available_driver():
         """Return the driver profile for a given user (not deleted)."""
         return (
-            DriverProfile.objects
-            .select_related('user')
-            .filter(user=user, is_deleted=False)
-            .first()
+            DriverProfile.objects.filter(is_available=True).first()
         )
 
     @staticmethod

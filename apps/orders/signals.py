@@ -6,6 +6,8 @@ from .models import (
     Order, 
     Review
 )
+from apps.restaurants.services.restaurant_service import RestaurantService
+
 
 @receiver(post_save, sender=Review)
 def update_rating_on_review_save(sender, instance, created, **kwargs):
@@ -15,6 +17,7 @@ def update_rating_on_review_save(sender, instance, created, **kwargs):
     if created:
         if instance.restaurant:
             instance.restaurant.update_average_rating()
+            RestaurantService.clear_restaurant_cache()
     
 @receiver(post_save, sender=Order)
 def order_notification_to_restaurant(sender, instance, created, **kwargs):

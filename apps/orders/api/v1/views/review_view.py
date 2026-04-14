@@ -10,6 +10,7 @@ from common.api.filters import ReviewFilter
 from common.api.throttles import ReviewCreateThrottle
 from common.api.pagination import ReviewLimitOffsetPagination
 from apps.orders.selectors.review_selector import ReviewSelector
+from apps.orders.services.review_service import ReviewService
 
 logger = logging.getLogger(__name__)
 
@@ -60,13 +61,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return ReviewSelector.get_none_review()
         return ReviewSelector.get_review_queryset(user=user)
-
-    def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        cache.delete_many(['list_restaurant','retrieve_restaurant'])
-        return response
     
     def perform_create(self, serializer):
         """ Customer can only review their own orders only. """
         customer_profile = self.request.user.customer_profile
-        serializer.save(customer=customer_profile)
+        ReviewService.create(customer_profile=customer_profile, serializer=serializer)

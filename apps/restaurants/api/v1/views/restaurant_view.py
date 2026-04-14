@@ -10,12 +10,12 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from apps.restaurants.api.v1.serializers.restaurant_serializers import  RestaurantSerializer, RestaurantDetailSerializer
 from apps.restaurants.api.v1.serializers.menuitem_serializers import  MenuItemSerializer
-from apps.restaurants.models import   MenuItem
 from common.utils.permissions import IsRestaurantOwner, IsOwnerOrReadOnly
 from common.api.pagination import RestaurantPageNumberPagination
 from common.api.filters import RestaurantFilter
 from apps.restaurants.selectors.restaurant_selector import RestaurantSelector
 from apps.restaurants.selectors.menuitem_selector import MenuItemSelector
+from apps.restaurants.services.restaurant_service import RestaurantService
 
 logger = logging.getLogger(__name__)
 
@@ -127,26 +127,12 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """ Method to soft delete the restaurant. """
-        instance.is_deleted = True
-        menu_items = MenuItemSelector.get_menuitems_of_restaurants(restaurant=instance)
-        for menu_item in menu_items:
-            menu_item.is_deleted = True
-            menu_item.save()
-        instance.save()
+        RestaurantService.soft_delete_restaurant(restaurant=instance)
 
     @method_decorator(cache_page(60 * 5), name='list_restaurant')
     def list(self, request, *args, **kwargs):
-        """ Overriden list method to get pagination on restaurants and added 5 minutes. """
-        queryset = self.filter_queryset(self.get_queryset())
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = RestaurantSerializer(self.filter_queryset(self.get_queryset()), many=True, context={"request": request})
-        return Response(serializer.data)
-    
+        return super().list(request, *args, **kwargs)
+       
     @method_decorator(cache_page(60 * 10), name='retrieve_restaurant')
     def retrieve(self, request, *args, **kwargs):
         """ Added cache of 10 minutes on restaurant details method. """
@@ -157,7 +143,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
     def menu(self, request,  *args, **kwargs):
         """ Created a custom menu method to get menu of the restaurant with 15 minutes of cache. """
         restaurant = self.get_object()
-        items = MenuItemSelector.get_restaurant_menu(restaurant)
+        items = MenuItemSelector.get_restaurant_menu(restaurant=restaurant)
         serializer = MenuItemSerializer(items, many=True, context={'request': request})
         return Response(serializer.data,status=status.HTTP_200_OK)
     

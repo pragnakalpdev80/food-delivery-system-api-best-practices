@@ -5,6 +5,7 @@ from rest_framework import viewsets
 from apps.users.api.v1.serializers.address_serializers import AddressSerializer
 from common.utils.permissions import IsCustomer
 from apps.users.selectors.user_selector import UserSelector
+from apps.users.services.user_service import UserService
 
 
 logger = logging.getLogger(__name__)
@@ -70,5 +71,4 @@ class AddressViewSet(viewsets.ModelViewSet):
     
     def perform_destroy(self, instance):
         """ Method to soft delete the address. """
-        instance.is_deleted = True
-        instance.save()
+        UserService.soft_delete(user=instance)

@@ -45,13 +45,25 @@ class OrderItemViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if not self.request.user.is_authenticated:
             return OrderSelector.get_none_orderitem()
-        OrderSelector.get_order_items_for_user(user=user)
+        return OrderSelector.get_order_items_for_user(user=user)
 
     def retrieve(self, request, *args, **kwargs):
         """ Override retrieve to enforce object-level permission on order items. """
         instance = self.get_object()
-        if instance.order.customer.user != request.user and not (request.user.user_type == 'restaurant_owner' and instance.order.restaurant.owner == request.user) and not (request.user.user_type == 'delivery_driver' and instance.order.driver and instance.order.driver.user == request.user):
-            return Response({'detail': 'You do not have permission to view this order item.'}, status=status.HTTP_403_FORBIDDEN)
+        user = request.user
+        is_owner = (
+            (user.user_type == 'customer' and instance.order.customer.user == user)
+            or (user.user_type == 'restaurant_owner'
+                and instance.order.restaurant.owner == user)
+            or (user.user_type == 'delivery_driver'
+                and instance.order.driver
+                and instance.order.driver.user == user)
+        )
+        if not is_owner:
+            return Response(
+                {'detail': 'You do not have permission to view this order item.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 

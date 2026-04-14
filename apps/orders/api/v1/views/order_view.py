@@ -14,6 +14,7 @@ from common.utils.permissions import IsRestaurantOwner, IsRestaurantOwnerOrDrive
 from common.api.filters import OrderFilter
 from common.api.throttles import OrderCreateThrottle
 from common.api.pagination import OrderCursorPagination
+from apps.orders.services.order_service import OrderService
 
 logger = logging.getLogger(__name__)
 
@@ -134,14 +135,14 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='place', throttle_classes=[OrderCreateThrottle])
     def place(self, request, *args, **kwargs):
         """
-        Custom method to place the order
+        cart to place the order
         """
         if request.user.user_type != 'customer':
             return Response({'message': 'Only customers can place orders.'}, status=status.HTTP_403_FORBIDDEN)
         serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
-      
+              
         return Response(OrderDetailSerializer(order, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='cancel')
@@ -151,47 +152,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         """
         order = self.get_object()
         user_type = request.user.user_type
-        if user_type == 'delivery_driver':
-            return Response({'error': 'Driver cannot cancel the order.'}, status=status.HTTP_400_BAD_REQUEST)
-        if not order.can_cancel():
-            return Response({'error': 'This order cannot be cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
-        order.status = 'cancelled'
-        order.save(update_fields=['status', 'updated_at'])
-        if order.driver:
-            driver = DriverProfile.objects.filter(id=order.driver.id).first()
-            driver.update_availability(True)
-            driver.save(update_fields=['updated_at','is_available'])
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"restaurant_{order.restaurant.id}",
-            {
-                "type": "order_status_update",
-                "order_id": str(order.order_number),
-                "status":order.status,
-                "message": "Order cancelled!"
-            }
-        )
-
-        async_to_sync(channel_layer.group_send)(
-            f"order_{order.order_number}",
-            {
-                "type": "order_status_update",
-                "order_id": str(order.order_number),
-                "status":order.status,
-                "message": "Order cancelled!"
-            }
-        )
-
-        async_to_sync(channel_layer.group_send)(
-            f"customer_{order.customer.id}",
-            {
-                "type": "order_status_update",
-                "order_id": str(order.order_number),
-                "status":order.status,
-                "message": "Order cancelled!"
-            }
-        )
-
+        OrderService.cancel(order=order, user_type=user_type)
+        
         return Response({'success': 'Order cancelled successfully.'},status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='update-status')
@@ -206,83 +168,14 @@ class OrderViewSet(viewsets.ModelViewSet):
         order = self.get_object()
         self.check_object_permissions(request, order)
         new_status = request.data.get('status')
-
-        if user_type == 'restaurant_owner':
-            if new_status not in ['confirmed','preparing','ready']:
-                return Response({'error': f'{new_status} status is not valid'},status=status.HTTP_400_BAD_REQUEST)
-            
-            elif order.status == 'pending':
-                if new_status != 'confirmed':
-                    return Response({'error': f'Please confirm the order first.'},status=status.HTTP_400_BAD_REQUEST)
-                
-            elif order.status == 'confirmed':
-                if new_status != 'preparing':
-                    return Response({'error': f'Please prepare the order first.'},status=status.HTTP_400_BAD_REQUEST)
-                
-            elif order.status == 'preparing':
-                if new_status != 'ready':
-                    return Response({'error': f'Please ready the order first.'},status=status.HTTP_400_BAD_REQUEST)
-
-            else:
-                return Response({'error': f'You can not do more actions.'},status=status.HTTP_400_BAD_REQUEST)
-            
-        if user_type == 'delivery_driver':
-            if new_status not in ['picked_up','delivered']:
-                return Response({'error': f'{new_status} status is not valid'},status=status.HTTP_400_BAD_REQUEST)
-
-            elif order.status == 'ready':
-                if new_status != 'picked_up':
-                    return Response({'error': f'Please pick up the order first.'},status=status.HTTP_400_BAD_REQUEST)
-            
-            elif order.status == 'picked_up':
-                if new_status != 'delivered':
-                    return Response({'error': f'Please deliver the order.'},status=status.HTTP_400_BAD_REQUEST)
-
-            else:
-                return Response({'error': f'You can not do more actions.'},status=status.HTTP_400_BAD_REQUEST)
-
-        order.status = new_status
-        order.save(update_fields=['status', 'updated_at'])
-        if order.status == 'delivered':
-            order.actual_delivery_time = datetime.now()
-            order.save(update_fields=['actual_delivery_time'])
-              # print(order.driver.id)
-            driver = DriverProfile.objects.filter(id=order.driver.id).first()
-              # print(driver)
-            driver.update_availability(True)
-            driver.save(update_fields=['updated_at','is_available'])
-        #web socket
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"restaurant_{order.restaurant.id}",
-            {
-                "type": "order_status_update",
-                "order_id": str(order.order_number),
-                "status":order.status,
-                "message": "Order status updated!"
-            }
-        )
-
-        async_to_sync(channel_layer.group_send)(
-            f"order_{order.order_number}",
-            {
-                "type": "order_status_update",
-                "order_id": str(order.order_number),
-                "status":order.status,
-                "message": "Order status updated!"
-            }
-        )
-        
-        if order.driver:
-            async_to_sync(channel_layer.group_send)(
-                f"driver_{order.driver.id}",
-                {
-                    "type": "order_status_update_driver",
-                    "order_id": str(order.order_number),
-                    "status":order.status,
-                    "message": "Order status updated!"
-                }
+        if not new_status:
+            return Response(
+                {'error': 'status field is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+        
+        OrderService.update_status(order=order, user_type=user_type, new_status=new_status)
+        
         return Response({'success': f'Order status updated to {new_status}.'},status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='assign-driver')
@@ -292,40 +185,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         """
         order = self.get_object()
         self.check_object_permissions(request, order)
-        if order.driver:
-            return Response({'error': f'Driver is assigned. You cannot assign driver again'},status=status.HTTP_400_BAD_REQUEST)
-    
-        try:
-            driver = DriverProfile.objects.filter(is_available=True).first()
-            if not driver:
-                return Response({'detail': 'No available driver found.'}, status=status.HTTP_404_NOT_FOUND)
-        except DriverProfile.DoesNotExist:
-            return Response({'detail': 'Driver not found.'}, status=status.HTTP_404_NOT_FOUND)
-        order.driver = driver
-        driver.update_availability(False)
-        driver.save()
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-                f"driver_{order.driver.id}",
-                {
-                    "type": "order_status_update_driver",
-                    "order_id": str(order.order_number),
-                    "status":order.status,
-                    "message": "Order status updated!"
-                }
-            )
-        
-        async_to_sync(channel_layer.group_send)(
-            f"order_{order.order_number}",
-            {
-                "type": "order_status_update",
-                "order_id": str(order.order_number),
-                "status":order.status,
-                "message": "Order status updated!"
-            }
-        )
-
-        order.save(update_fields=['driver', 'updated_at'])
+        OrderService.assign_driver(order=order)
         return Response({'detail': f'Driver assigned successfully.'},status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):

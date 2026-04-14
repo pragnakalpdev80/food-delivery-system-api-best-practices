@@ -5,6 +5,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from apps.users.api.v1.serializers.driver_serializers import DriverProfileSerializer
 from apps.users.selectors.user_selector import UserSelector
 from common.utils.permissions import IsDriver
+from apps.users.services.user_service import UserService
+
 
 logger = logging.getLogger(__name__)
 
@@ -54,5 +56,4 @@ class DriverViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """ Method to soft delete the driver profile. """
-        instance.is_deleted = True
-        instance.save()
+        UserService.soft_delete(user=instance)

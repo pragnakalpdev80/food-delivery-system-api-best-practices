@@ -32,7 +32,6 @@ class OrderSelector:
             return OrderItem.objects.filter(order__restaurant__owner=user)
         elif user.user_type == 'delivery_driver':
             return OrderItem.objects.filter(order__driver__user=user)
-        return OrderItem.objects.none()
     
     @staticmethod
     def get_none_order():

@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from apps.orders.models import Cart
 from apps.orders.api.v1.serializers.cart_serializers import CartSerializer
 from apps.orders.selectors.cart_selector import CartSelector
+from apps.orders.services.cart_service import CartService
 from common.utils.permissions import IsCustomer
 
 logger = logging.getLogger(__name__)
@@ -64,11 +65,10 @@ class CartViewSet(viewsets.ModelViewSet):
         """
         try:
             cart = request.user.customer_profile.cart
-            cart.cart_items.all().delete()
-            cart.restaurant = None
-            cart.save(update_fields=['restaurant', 'updated_at'])
+            CartService.clear_cart(cart=cart)
         except Cart.DoesNotExist:
             pass
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, *args, **kwargs):

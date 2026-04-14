@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from apps.users.api.v1.serializers.customer_serializers import CustomerProfileSerializer
 from common.utils.permissions import IsCustomer
 from apps.users.selectors.user_selector import UserSelector
+from apps.users.services.user_service import UserService
 
 logger = logging.getLogger(__name__)
 
@@ -55,5 +56,4 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """ Method to soft delete the customer. """
-        instance.is_deleted = True
-        instance.save()
+        UserService.soft_delete(user=instance)

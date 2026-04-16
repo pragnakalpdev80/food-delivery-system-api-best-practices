@@ -210,4 +210,3 @@ media
 data.json
 
 redis-cli
-tests/

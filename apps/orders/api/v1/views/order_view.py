@@ -12,7 +12,7 @@ from apps.orders.api.v1.serializers.order_serializers import OrderCreateSerializ
 from apps.orders.selectors.order_selector import OrderSelector
 from common.utils.permissions import IsRestaurantOwner, IsRestaurantOwnerOrDriver, IsOwnerOrReadOnly, IsCustomer
 from common.api.filters import OrderFilter
-from common.api.throttles import OrderCreateThrottle
+from common.api.throttles import OrderCreateThrottle, CustomerRateThrottle
 from common.api.pagination import OrderCursorPagination
 from apps.orders.services.order_service import OrderService
 
@@ -99,6 +99,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         self.check_object_permissions(request, instance)
         serializer = self.get_serializer(instance)
+        OrderService.retrieve(order_id=instance.id)
         return Response(serializer.data)
 
     def get_serializer_class(self):
@@ -132,6 +133,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             return OrderSelector.get_none_order()
         OrderSelector.get_order_queryset(user=user)
     
+    def get_throttles(self):
+        if self.action == 'place':
+            return [CustomerRateThrottle()]
+        return super().get_throttles()
+
     @action(detail=False, methods=['post'], url_path='place', throttle_classes=[OrderCreateThrottle])
     def place(self, request, *args, **kwargs):
         """
@@ -142,7 +148,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
-              
         return Response(OrderDetailSerializer(order, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='cancel')

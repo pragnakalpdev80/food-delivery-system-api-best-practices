@@ -6,7 +6,7 @@ from apps.users.api.v1.serializers.address_serializers import AddressSerializer
 from common.utils.permissions import IsCustomer
 from apps.users.selectors.user_selector import UserSelector
 from apps.users.services.user_service import UserService
-
+from common.api.throttles import CustomerRateThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,8 @@ class AddressViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsCustomer]
     serializer_class = AddressSerializer
     http_method_names = ['get', 'post', 'patch','delete']
-
+    throttle_classes = CustomerRateThrottle
+    
     def get_queryset(self):
         """ Only customers can manage own addresses only"""
         if not self.request.user.is_authenticated:

@@ -9,6 +9,7 @@ from apps.orders.api.v1.serializers.cart_serializers import CartSerializer
 from apps.orders.selectors.cart_selector import CartSelector
 from apps.orders.services.cart_service import CartService
 from common.utils.permissions import IsCustomer
+from common.api.throttles import CustomerRateThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ class CartViewSet(viewsets.ModelViewSet):
     """ Cart ViewSet to manage the cart of customers. """
     permission_classes = [IsAuthenticated, IsCustomer]
     serializer_class = CartSerializer
+    throttle_classes = CustomerRateThrottle
     http_method_names = ['get','delete']
 
     def get_queryset(self):

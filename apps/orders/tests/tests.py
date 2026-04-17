@@ -120,7 +120,7 @@ class CustomerAPITestCase(APITestCase):
 
     def test_list_users(self):
         """Test retrieving customer list"""
-        response = self.client.get('/api/v1/customers/',HTTP_AUTHORIZATION=f"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzc1NTYxMDQ5LCJpYXQiOjE3NzU1NTc0NDksImp0aSI6IjkxODM3MzY0ODBhNTQwODE5ZTlmYjE2MDU4ODFiM2FjIiwidXNlcl9pZCI6IjMifQ.rB3IdidVf2jiXfk-TV0jJZ8dmNrjZ2NBLgJ8k19zT5g")
+        response = self.client.get('/api/v1/customers/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_retrieve_user(self):

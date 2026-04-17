@@ -6,6 +6,7 @@ from apps.users.api.v1.serializers.customer_serializers import CustomerProfileSe
 from common.utils.permissions import IsCustomer
 from apps.users.selectors.user_selector import UserSelector
 from apps.users.services.user_service import UserService
+from common.api.throttles import CustomerRateThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated,IsCustomer]
     serializer_class = CustomerProfileSerializer
     http_method_names = ['get', 'patch', 'delete']
+    throttle_classes = CustomerRateThrottle
 
     def get_queryset(self):
         """ Queryset to get customer can only access own profile. """

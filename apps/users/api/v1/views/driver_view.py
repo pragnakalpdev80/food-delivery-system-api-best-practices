@@ -6,7 +6,7 @@ from apps.users.api.v1.serializers.driver_serializers import DriverProfileSerial
 from apps.users.selectors.user_selector import UserSelector
 from common.utils.permissions import IsDriver
 from apps.users.services.user_service import UserService
-
+from common.api.throttles import DriverRateThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ class DriverViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsDriver]
     serializer_class = DriverProfileSerializer
     http_method_names = ['get','patch','delete']
+    throttle_classes = DriverRateThrottle
 
     def get_queryset(self):
         """ Queryset to get drivers can only access own profile. """

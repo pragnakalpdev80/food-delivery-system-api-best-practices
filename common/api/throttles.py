@@ -30,6 +30,25 @@ class LoginRateThrottle(AnonRateThrottle):
 
 class RegistrationRateThrottle(AnonRateThrottle):
     """
-    registrayion endpoint throttle
+    registration endpoint throttle
     """
     scope = 'registration'
+
+
+class CustomerRateThrottle(UserRateThrottle):
+    """ A customer can do 1000 requests per hour """
+    scope = 'customer'
+    rate = '1000/hour'
+
+
+class RestaurantOwnerRateThrottle(UserRateThrottle):
+    """ A restaurant owner can do 1000 requests per hour """
+
+    scope = 'restaurant_owner'
+    rate = '500/hour'
+
+
+class DriverRateThrottle(UserRateThrottle):
+    """ A driver can do 1000 requests per hour """
+    scope = 'driver'
+    rate = '500/hour'

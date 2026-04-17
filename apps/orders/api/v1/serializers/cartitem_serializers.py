@@ -29,18 +29,12 @@ class CartItemSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         try:
             cart = Cart.objects.get(customer=request.user.customer_profile)
-             # print(f"{cart}")
             existing = CartItem.objects.filter(cart=request.user.customer_profile.cart,menu_item=value).first()
             if existing:
                 raise serializers.ValidationError(f"Item already exists in your cart.")
         except Cart.DoesNotExist:
             return value
-        if cart.restaurant == None:
-              # print(value.restaurant)
-             cart.restaurant = value.restaurant
-             cart.save()
-              # print(cart)
-
+        
         if cart.restaurant and value.restaurant != cart.restaurant:
             raise serializers.ValidationError(f"Clear your cart first to add another restaurant's item.")
         return value
@@ -51,5 +45,10 @@ class CartItemSerializer(serializers.ModelSerializer):
         """
         request = self.context.get('request')
         cart = Cart.objects.get(customer=request.user.customer_profile)
+        menu_item = validated_data['menu_item']
+        if cart.restaurant is None:
+            cart.restaurant = menu_item.restaurant
+            cart.save(update_fields=['restaurant', 'updated_at'])
+
         validated_data['cart'] = cart
         return CartItem.objects.create(**validated_data)

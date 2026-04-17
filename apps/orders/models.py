@@ -67,6 +67,14 @@ class Order(TimestampedModel):
     def is_delivered(self):
         """ Method to check the order is delivered or not. """
         return self.status == 'delivered'
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['customer', 'status']),
+            models.Index(fields=['restaurant', 'status']),
+            models.Index(fields=['driver', 'status']),
+            models.Index(fields=['customer', '-created_at']),
+        ]
 
 
 class OrderItem(models.Model):
@@ -93,3 +101,8 @@ class Review(TimestampedModel):
 
     def __str__(self):
        return f"{self.customer}: {self.order}: {self.rating}"
+    
+    class Meta:
+        indexes = [
+                models.Index(fields=['customer', 'restaurant']),
+            ]

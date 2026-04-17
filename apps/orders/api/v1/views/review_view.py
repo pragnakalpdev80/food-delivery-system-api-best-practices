@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from apps.orders.api.v1.serializers.review_serializers import ReviewSerializer
 from common.utils.permissions import IsOrderCustomer
 from common.api.filters import ReviewFilter
-from common.api.throttles import ReviewCreateThrottle
+from common.api.throttles import ReviewCreateThrottle, CustomerRateThrottle
 from common.api.pagination import ReviewLimitOffsetPagination
 from apps.orders.selectors.review_selector import ReviewSelector
 from apps.orders.services.review_service import ReviewService
@@ -52,7 +52,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
     filterset_class = ReviewFilter
     ordering_fields = ['rating',]
     ordering = ['-created_at']
-    throttle_classes = [ReviewCreateThrottle]
     http_method_names = ['get', 'post']
 
     def get_queryset(self):
@@ -66,3 +65,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         """ Customer can only review their own orders only. """
         customer_profile = self.request.user.customer_profile
         ReviewService.create(customer_profile=customer_profile, serializer=serializer)
+    
+    def get_throttles(self):
+        if self.action == 'post':
+            return [ReviewCreateThrottle()]
+        return [CustomerRateThrottle()]

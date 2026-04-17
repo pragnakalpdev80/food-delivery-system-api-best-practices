@@ -9,6 +9,7 @@ from common.utils.permissions import IsRestaurantOwner
 from common.api.pagination import MenuItemPageNumberPagination
 from common.api.filters import MenuItemFilter
 from apps.restaurants.services.menuitem_service import MenuItemService
+from common.api.throttles import RestaurantOwnerRateThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +62,8 @@ logger = logging.getLogger(__name__)
 class MenuItemViewSet(viewsets.ModelViewSet):
     """ Menu items ViewSet to manage the menu items of restaurant. """
     pagination_class =MenuItemPageNumberPagination
-    # queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
+    throttle_classes = RestaurantOwnerRateThrottle
     filterset_class = MenuItemFilter
     filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
     search_fields = ['name', 'description']

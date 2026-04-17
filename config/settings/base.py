@@ -15,7 +15,7 @@ from pathlib import Path
 from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = environ.Env(DEBUG=(bool,False))
 environ.Env.read_env(os.path.join(BASE_DIR,'.env'))
@@ -28,7 +28,6 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS',default=[])
 # Application definition
 INSTALLED_APPS = [
     'daphne',
@@ -51,6 +50,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -91,6 +91,10 @@ DATABASES = {
         'PASSWORD': env('DB_PASSWORD'),
         'HOST': env('DB_HOST'),
         'PORT': env('DB_PORT'),
+        'CONN_MAX_AGE': 600,
+        'OPTIONS': {
+            'connect_timeout': 10,
+        }
     }
 }
 # Password validation
@@ -168,6 +172,9 @@ REST_FRAMEWORK = {
         'location_update': '500/hour',
         'login': '5/hour',
         'registration':'5/hour',
+        'customer': '1000/hour',
+        'restaurant_owner': '500/hour',
+        'driver': '500/hour',
     },
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     'DEFAULT_VERSION': 'v1',
@@ -182,7 +189,7 @@ REST_FRAMEWORK = {
         # OrderingFilter: Handles sorting results (built into DRF)
         'rest_framework.filters.OrderingFilter',
     ],
-    'EXCEPTION_HANDLER': 'common.api.exceptions.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'common.exceptions.main.custom_exception_handler',
 }
 
 SIMPLE_JWT = {
@@ -214,11 +221,20 @@ SPECTACULAR_SETTINGS = {
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+            'format': '%(asctime)s %(name)s %(levelname)s %(message)s'
+        }
+    },
     'handlers': {
         'file': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'api.log',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs/api.log',
+            'maxBytes': 10485760,  # 10MB
+            'backupCount': 5,
+            'formatter': 'json'
         },
     },
     'loggers': {
@@ -236,7 +252,7 @@ CACHES = {
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
-        'KEY_PREFIX': 'api',
+        'KEY_PREFIX': 'api_v1',
         'TIMEOUT': 300,
     }
 } 
@@ -254,9 +270,5 @@ CHANNEL_LAYERS = {
     },
 }
 
-SECURE_SSL_REDIRECT = True
-SECURE_HSTS_SECONDS = 31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'

@@ -32,6 +32,7 @@ urlpatterns = [
     path('api/v1/', include('apps.users.api.v1.urls')),
     path('api/v1/', include('apps.restaurants.api.v1.urls')),
     path('api/v1/', include('apps.orders.api.v1.urls')),
+    path('api/health/', include('apps.health.urls')),
     path('api/token/', TokenObtainPairView.as_view(throttle_classes=[LoginRateThrottle]), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),

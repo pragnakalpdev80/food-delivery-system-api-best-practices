@@ -62,23 +62,6 @@ class OrderConsumer(AsyncWebsocketConsumer):
         except AttributeError:
             None
 
-    async def receive(self,text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json["message"]
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "greeting_message",
-                "message" : message
-            })
-
-    async def greeting_message(self, event):
-        message = event['message']
-        
-        await self.send(text_data=json.dumps({
-            'message': message
-        }))
-    
     async def order_status_update(self, event):
         await self.send(text_data=json.dumps({
             'type': 'order_status_update',
@@ -109,13 +92,11 @@ class RestaurantDashboardConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """ connects to the restaurant dashboard """
         if isinstance(self.scope['user'], AnonymousUser):
-            print("1")
             await self.close()
             return
         
         if not self.scope['user'].user_type == 'restaurant_owner':
             await self.close()
-            print("2")
             return
              
         self.restaurant_id = self.scope["url_route"]["kwargs"]["restaurant_id"]
@@ -124,7 +105,6 @@ class RestaurantDashboardConsumer(AsyncWebsocketConsumer):
  
         has_access = await self.user_owns_restaurant(user=user, restaurant_id=self.restaurant_id)
         if not has_access:
-            print("1")
             await self.close()
             return
     
@@ -152,9 +132,10 @@ class RestaurantDashboardConsumer(AsyncWebsocketConsumer):
             'timestamp': datetime.now().isoformat()
         }))
 
-    async def order_status_update(self, event):
+    async def order_status_update_restaurant(self, event):
         await self.send(text_data=json.dumps({
-            'type': 'order_status_update',
+            'type': 'order_status_update_restaurant',
+            'order_id': event['order_id'],
             'status': event['status'],
             'message': event['message'],
             'timestamp': datetime.now().isoformat()
@@ -172,10 +153,7 @@ class CustomerDashboardConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        if not self.scope['user'].customer_profile.id == self.scope["url_route"]["kwargs"]["customer_id"]:
-            await self.close()
-            return
-
+    
         self.customer_id = self.scope["url_route"]["kwargs"]["customer_id"]
         self.room_group_name = f"customer_{self.customer_id}"
         user = self.scope["user"]
@@ -212,9 +190,11 @@ class CustomerDashboardConsumer(AsyncWebsocketConsumer):
             'timestamp': datetime.now().isoformat()
         }))
 
-    async def order_status_update(self, event):
+    async def order_status_update_customer(self, event):
+        print(event)
         await self.send(text_data=json.dumps({
-            'type': 'order_status_update',
+            'type': 'order_status_update_customer',
+            'order_id': event['order_id'],
             'status': event['status'],
             'message': event['message'],
             'timestamp': datetime.now().isoformat()
@@ -281,7 +261,8 @@ class DriverDashboardConsumer(AsyncWebsocketConsumer):
 
     async def order_status_update_driver(self, event):
         await self.send(text_data=json.dumps({
-            'type': 'order_status_update',
+            'type': 'order_status_update_driver',
+            'order_id': event['order_id'],
             'status': event['status'],
             'message': event['message'],
             'timestamp': datetime.now().isoformat()

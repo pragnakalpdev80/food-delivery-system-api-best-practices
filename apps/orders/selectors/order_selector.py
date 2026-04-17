@@ -37,3 +37,7 @@ class OrderSelector:
     def get_none_order():
         """no address for unauthenticated users"""
         return Order.objects.none()
+    
+    @staticmethod
+    def get_order(id):
+        return Order.objects.filter(id=id).first()

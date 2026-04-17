@@ -28,7 +28,16 @@ def custom_exception_handler(exc, context):
     
     # Request object
     request = context.get('request')
-    
+    if isinstance(exc, DomainError):
+        error_data = {
+            'status_code': 400,
+            'message': exc.message,
+            'details': {
+                'code': exc.code,  
+            }
+        }
+        return Response(error_data, status=status.HTTP_400_BAD_REQUEST)
+
     if response is not None:
         # Customize based on exception type
         error_data = {
@@ -90,16 +99,7 @@ def custom_exception_handler(exc, context):
                     'code': 'method_not_allowed',
                     'allowed_methods': exc.allowed_methods if hasattr(exc, 'allowed_methods') else []}}
         
-        elif isinstance(exc, DomainError):
-            error_data = {
-                'status_code': 400,
-                'message': exc.message,
-                'details': {
-                    'code': exc.code,  
-                }
-            }
-            return Response(error_data, status=status.HTTP_400_BAD_REQUEST)
-
+        
         # Generic error
         else:
             error_data['error'] = {

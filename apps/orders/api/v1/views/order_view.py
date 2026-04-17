@@ -133,11 +133,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             return OrderSelector.get_none_order()
         OrderSelector.get_order_queryset(user=user)
     
-    def get_throttles(self):
-        if self.action == 'place':
-            return [CustomerRateThrottle()]
-        return super().get_throttles()
-
+   
     @action(detail=False, methods=['post'], url_path='place', throttle_classes=[OrderCreateThrottle])
     def place(self, request, *args, **kwargs):
         """

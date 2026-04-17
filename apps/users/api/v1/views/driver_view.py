@@ -47,7 +47,7 @@ class DriverViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsDriver]
     serializer_class = DriverProfileSerializer
     http_method_names = ['get','patch','delete']
-    throttle_classes = DriverRateThrottle
+    throttle_classes = [DriverRateThrottle]
 
     def get_queryset(self):
         """ Queryset to get drivers can only access own profile. """

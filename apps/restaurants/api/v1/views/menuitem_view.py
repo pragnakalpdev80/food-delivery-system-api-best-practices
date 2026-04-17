@@ -63,7 +63,7 @@ class MenuItemViewSet(viewsets.ModelViewSet):
     """ Menu items ViewSet to manage the menu items of restaurant. """
     pagination_class =MenuItemPageNumberPagination
     serializer_class = MenuItemSerializer
-    throttle_classes = RestaurantOwnerRateThrottle
+    throttle_classes = [RestaurantOwnerRateThrottle]
     filterset_class = MenuItemFilter
     filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
     search_fields = ['name', 'description']

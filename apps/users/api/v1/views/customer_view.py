@@ -48,7 +48,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated,IsCustomer]
     serializer_class = CustomerProfileSerializer
     http_method_names = ['get', 'patch', 'delete']
-    throttle_classes = CustomerRateThrottle
+    throttle_classes = [CustomerRateThrottle]
 
     def get_queryset(self):
         """ Queryset to get customer can only access own profile. """

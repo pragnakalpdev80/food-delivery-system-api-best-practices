@@ -49,7 +49,7 @@ class CartViewSet(viewsets.ModelViewSet):
     """ Cart ViewSet to manage the cart of customers. """
     permission_classes = [IsAuthenticated, IsCustomer]
     serializer_class = CartSerializer
-    throttle_classes = CustomerRateThrottle
+    throttle_classes = [CustomerRateThrottle]
     http_method_names = ['get','delete']
 
     def get_queryset(self):

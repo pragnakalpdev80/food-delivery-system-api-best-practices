@@ -62,8 +62,8 @@ class AddressViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsCustomer]
     serializer_class = AddressSerializer
     http_method_names = ['get', 'post', 'patch','delete']
-    throttle_classes = CustomerRateThrottle
-    
+    throttle_classes = [CustomerRateThrottle]
+
     def get_queryset(self):
         """ Only customers can manage own addresses only"""
         if not self.request.user.is_authenticated:

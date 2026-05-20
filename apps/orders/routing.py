@@ -13,4 +13,4 @@ websocket_urlpatterns = [
     re_path(r'ws/restaurants/(?P<restaurant_id>\d+)/$',RestaurantDashboardConsumer.as_asgi()),
     re_path(r'ws/drivers/(?P<driver_id>\d+)/$',DriverDashboardConsumer.as_asgi()),
     re_path(r'ws/customers/(?P<customer_id>\d+)/$',CustomerDashboardConsumer.as_asgi()),
-]   
+] 

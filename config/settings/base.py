@@ -85,7 +85,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.{}'.format(env('DB_ENGINE')),
         'NAME': env('DB_NAME'),
         'USER': env('DB_USER'),
         'PASSWORD': env('DB_PASSWORD'),
@@ -140,9 +140,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_RENDERERS = [
     'rest_framework.renderers.JSONRenderer',
 ]
-if DEBUG:
-    DEFAULT_RENDERERS.append('rest_framework.renderers.BrowsableAPIRenderer')
-
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': DEFAULT_RENDERERS,

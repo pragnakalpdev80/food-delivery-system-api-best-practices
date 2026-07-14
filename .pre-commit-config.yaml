@@ -65,7 +65,7 @@ repos:
     hooks:
       - id: semgrep
         name: semgrep (Django/Python security)
-        entry: venv/bin/semgrep --config p/django --config p/python --error .
+        entry: env SEMGREP_SETTINGS_FILE=/tmp/semgrep-settings.yml SEMGREP_LOG_FILE=/tmp/semgrep.log venv/bin/semgrep --config p/django --config p/python --error .
         language: system
         types: [python]
         pass_filenames: false

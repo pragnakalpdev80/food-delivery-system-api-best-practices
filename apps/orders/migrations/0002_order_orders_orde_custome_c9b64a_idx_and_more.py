@@ -4,28 +4,36 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('orders', '0001_initial'),
-        ('restaurants', '0001_initial'),
-        ('users', '0002_address_customerprofile_driverprofile'),
+        ("orders", "0001_initial"),
+        ("restaurants", "0001_initial"),
+        ("users", "0002_address_customerprofile_driverprofile"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='order',
-            index=models.Index(fields=['customer', 'status'], name='orders_orde_custome_c9b64a_idx'),
+            model_name="order",
+            index=models.Index(
+                fields=["customer", "status"], name="orders_orde_custome_c9b64a_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='order',
-            index=models.Index(fields=['restaurant', 'status'], name='orders_orde_restaur_17016b_idx'),
+            model_name="order",
+            index=models.Index(
+                fields=["restaurant", "status"], name="orders_orde_restaur_17016b_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='order',
-            index=models.Index(fields=['driver', 'status'], name='orders_orde_driver__83706f_idx'),
+            model_name="order",
+            index=models.Index(
+                fields=["driver", "status"], name="orders_orde_driver__83706f_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='order',
-            index=models.Index(fields=['customer', '-created_at'], name='orders_orde_custome_413d7d_idx'),
+            model_name="order",
+            index=models.Index(
+                fields=["customer", "-created_at"],
+                name="orders_orde_custome_413d7d_idx",
+            ),
         ),
     ]

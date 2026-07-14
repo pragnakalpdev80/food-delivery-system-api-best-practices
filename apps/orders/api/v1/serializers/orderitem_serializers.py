@@ -3,8 +3,15 @@ from apps.orders.models import OrderItem
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    """ order item serializer with required fields """
+    """order item serializer with required fields"""
+
     class Meta:
         model = OrderItem
-        fields = ['id', 'order', 'menu_item', 'quantity', 'price', 'special_instructions']   
-
+        fields = [
+            "id",
+            "order",
+            "menu_item",
+            "quantity",
+            "price",
+            "special_instructions",
+        ]

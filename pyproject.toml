@@ -1,0 +1,11 @@
+[tool.bandit]
+exclude_dirs = ["venv", "*/migrations/*"]
+skips = ["B101", "B104", "B106"]
+
+[tool.mypy]
+python_version = "3.12"
+explicit_package_bases = true
+exclude = ["^venv/", ".*/migrations/"]
+ignore_missing_imports = true
+allow_untyped_globals = true
+disable_error_code = ["attr-defined", "misc", "var-annotated"]

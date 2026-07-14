@@ -1,7 +1,7 @@
 from django.db import transaction
 
-class ReviewService:
 
+class ReviewService:
     @staticmethod
     @transaction.atomic
     def create(*, customer_profile, serializer, **data):

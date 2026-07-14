@@ -1,0 +1,88 @@
+# Pre-commit + pre-push quality gates.
+# Install once per clone:
+#   pre-commit install --hook-type pre-commit --hook-type pre-push
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-toml
+      - id: detect-private-key
+      - id: debug-statements
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.6
+    hooks:
+      - id: ruff           # lint
+        args: [--fix]
+      - id: ruff-format    # format
+
+  # mypy runs via the project's own venv (language: system), not an isolated
+  # pre-commit environment — the django-stubs plugin imports config.settings,
+  # which transitively imports every runtime dependency (celery, DRF, etc.);
+  # an isolated env only gets django-stubs and fails to even import settings.
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: venv/bin/mypy .
+        language: system
+        types: [python]
+        exclude: "^(.*/migrations/|venv/)"
+        pass_filenames: false
+
+  # bandit: security static analysis (hardcoded secrets, eval, weak crypto, ...).
+  # Same explicit-venv-path pattern as mypy — runs against the project's own
+  # installed dependencies rather than an isolated pre-commit environment.
+  - repo: local
+    hooks:
+      - id: bandit
+        name: bandit (security)
+        entry: venv/bin/bandit -c pyproject.toml -r .
+        language: system
+        types: [python]
+        pass_filenames: false
+
+  # Validate translation catalogs whenever a .po file changes (commit stage).
+  - repo: local
+    hooks:
+      - id: validate-translations
+        name: validate translation catalogs (.po)
+        entry: venv/bin/python scripts/validate_translations.py
+        language: system
+        files: \.po$
+        pass_filenames: false
+
+  # semgrep: deep Django/Python OWASP static analysis (unsafe mark_safe, raw SQL,
+  # SSRF, open redirects, etc.) — runs at pre-push stage because scans take ~30s.
+  - repo: local
+    hooks:
+      - id: semgrep
+        name: semgrep (Django/Python security)
+        entry: venv/bin/semgrep --config p/django --config p/python --error .
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [pre-push]
+
+  # Run the test suite + Django checks before allowing a push.
+  - repo: local
+    hooks:
+      - id: django-check
+        name: django system check
+        entry: venv/bin/python manage.py check
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: pytest
+        name: pytest (with coverage gate)
+        entry: venv/bin/pytest
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

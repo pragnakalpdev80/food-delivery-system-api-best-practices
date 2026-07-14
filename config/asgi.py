@@ -13,13 +13,13 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from common.middleware.jwt_middleware import JWTAuthMiddlewareStack
 import apps.orders.routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
 
-application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": JWTAuthMiddlewareStack(
-        URLRouter(
-            apps.orders.routing.websocket_urlpatterns
-        )
-    ),
-})
+application = ProtocolTypeRouter(
+    {
+        "http": get_asgi_application(),
+        "websocket": JWTAuthMiddlewareStack(
+            URLRouter(apps.orders.routing.websocket_urlpatterns)
+        ),
+    }
+)

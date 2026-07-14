@@ -14,33 +14,45 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,  # POST /api/token/ - Get tokens (login)
-    TokenRefreshView,     # POST /api/token/refresh/ - Get new access token
-    TokenVerifyView,      # POST /api/token/verify/ - Check if token is valid
+    TokenRefreshView,  # POST /api/token/refresh/ - Get new access token
+    TokenVerifyView,  # POST /api/token/verify/ - Check if token is valid
 )
 from common.api.throttles import LoginRateThrottle
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/v1/', include('apps.users.api.v1.urls')),
-    path('api/v1/', include('apps.restaurants.api.v1.urls')),
-    path('api/v1/', include('apps.orders.api.v1.urls')),
-    path('api/health/', include('apps.health.urls')),
-    path('api/token/', TokenObtainPairView.as_view(throttle_classes=[LoginRateThrottle]), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
-]   
+    path("admin/", admin.site.urls),
+    path("api/v1/", include("apps.users.api.v1.urls")),
+    path("api/v1/", include("apps.restaurants.api.v1.urls")),
+    path("api/v1/", include("apps.orders.api.v1.urls")),
+    path("api/health/", include("apps.health.urls")),
+    path(
+        "api/token/",
+        TokenObtainPairView.as_view(throttle_classes=[LoginRateThrottle]),
+        name="token_obtain_pair",
+    ),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+    path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    

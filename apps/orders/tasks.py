@@ -20,12 +20,13 @@ def broadcast_order_update(group_name, event_type, order_id, order_status, messa
                 "order_id": order_id,
                 "status": order_status,
                 "message": message,
-            }
+            },
         )
         logger.info(f"broadcast_order_update for group={group_name}")
 
     except Exception as exc:
         logger.error(f"broadcast_order_update failed for group={group_name}: {exc}")
+
 
 @shared_task
 def broadcast_new_order(group_name, event_type, order_id, message):
@@ -40,7 +41,7 @@ def broadcast_new_order(group_name, event_type, order_id, message):
                 "type": event_type,
                 "order_id": order_id,
                 "message": message,
-            }
+            },
         )
     except Exception as exc:
         logger.error(f"broadcast_order_update failed for group={group_name}: {exc}")

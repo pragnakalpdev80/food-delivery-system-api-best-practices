@@ -13,44 +13,42 @@ from common.api.throttles import CustomerRateThrottle
 
 logger = logging.getLogger(__name__)
 
+
 @extend_schema_view(
     list=extend_schema(
         summary="Cart",
         description="Cart",
         request=CartSerializer,
-        responses={200:CartSerializer},
-        tags=["Cart"]
+        responses={200: CartSerializer},
+        tags=["Cart"],
     ),
     retrieve=extend_schema(
         summary="Cart Details",
         description="Cart Details",
         request=CartSerializer,
-        responses={200:CartSerializer},
-        tags=["Cart"]
+        responses={200: CartSerializer},
+        tags=["Cart"],
     ),
     destroy=extend_schema(
         summary="This method is not allowed",
-        description = "Customer cannot delete cart.",
-        responses={
-            405:{}
-        },
-        tags=['Cart']
+        description="Customer cannot delete cart.",
+        responses={405: {}},
+        tags=["Cart"],
     ),
     clear=extend_schema(
         summary="Clear the Cart",
-        description = "Remove items from the cart.",
-        responses={
-            204:{}
-        },
-        tags=['Cart']
+        description="Remove items from the cart.",
+        responses={204: {}},
+        tags=["Cart"],
     ),
 )
 class CartViewSet(viewsets.ModelViewSet):
-    """ Cart ViewSet to manage the cart of customers. """
+    """Cart ViewSet to manage the cart of customers."""
+
     permission_classes = [IsAuthenticated, IsCustomer]
     serializer_class = CartSerializer
     throttle_classes = [CustomerRateThrottle]
-    http_method_names = ['get','delete']
+    http_method_names = ["get", "delete"]
 
     def get_queryset(self):
         """
@@ -60,7 +58,7 @@ class CartViewSet(viewsets.ModelViewSet):
             return CartSelector.get_none_cart()
         return CartSelector.get_cart_queryset(user=self.request.user.customer_profile)
 
-    @action(detail=False, methods=['delete'], url_path='clear')
+    @action(detail=False, methods=["delete"], url_path="clear")
     def clear(self, request):
         """
         Method to remove all cart items from the cart.
@@ -74,5 +72,8 @@ class CartViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, *args, **kwargs):
-        """ Cart creation endpoint is bloacked beacause when a customer will register then customer's cart will be created automatically and every customer can have only one cart."""
-        return Response({'error':'User can only have one cart'},status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        """Cart creation endpoint is bloacked beacause when a customer will register then customer's cart will be created automatically and every customer can have only one cart."""
+        return Response(
+            {"error": "User can only have one cart"},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )

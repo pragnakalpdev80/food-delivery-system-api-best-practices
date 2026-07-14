@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     env_file:
       - .env
-  
+
   django-web:
     build: .
     container_name: django-docker

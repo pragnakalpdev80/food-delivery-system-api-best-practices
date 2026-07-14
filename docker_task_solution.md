@@ -10,7 +10,7 @@ f19e990a13d1   postgres:17                        "docker-entrypoint.s…"   15 
 # OUTPUT of `docker images`
 
 ```
-(venv) PS C:\Internship\food-delivery-updated> docker images     
+(venv) PS C:\Internship\food-delivery-updated> docker images
 REPOSITORY                         TAG       IMAGE ID       CREATED         SIZE
 django-docker                      latest    29df72691340   6 minutes ago   1.41GB
 food-delivery-updated-django-web   latest    2f41f0c0ebf8   6 minutes ago   1.41GB

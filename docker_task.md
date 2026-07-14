@@ -4,7 +4,7 @@
 
 Your task is to containerize a Django application and make it accessible in a web browser using Docker and Docker Compose.
 
-This assignment is designed to help you understand how Docker packages Python applications and their dependencies into portable containers that can run consistently across environments. 
+This assignment is designed to help you understand how Docker packages Python applications and their dependencies into portable containers that can run consistently across environments.
 
 ---
 

@@ -10,66 +10,60 @@ from common.api.throttles import CustomerRateThrottle
 
 logger = logging.getLogger(__name__)
 
+
 @extend_schema_view(
     create=extend_schema(
         summary="Customer Address",
-        description = "Customer Address creation",
-        request= AddressSerializer,
-        responses={
-            201:AddressSerializer
-        },
-        tags=['Customer Address']
+        description="Customer Address creation",
+        request=AddressSerializer,
+        responses={201: AddressSerializer},
+        tags=["Customer Address"],
     ),
     list=extend_schema(
         summary="Customer Address",
         description="Customer Addresses",
-        request= AddressSerializer,
-        responses={
-            200:AddressSerializer
-        },
-        tags=["Customer Address"]),
+        request=AddressSerializer,
+        responses={200: AddressSerializer},
+        tags=["Customer Address"],
+    ),
     retrieve=extend_schema(
         summary="Customer Address",
         description="Customer Address details",
-        request= AddressSerializer,
-        responses={
-            200:AddressSerializer
-        },
-        tags=["Customer Address"]),
+        request=AddressSerializer,
+        responses={200: AddressSerializer},
+        tags=["Customer Address"],
+    ),
     partial_update=extend_schema(
         summary="Update Customer Address",
         description=" Update your Address details here",
-        request= AddressSerializer,
-        responses={
-            200:AddressSerializer
-        },
-        tags=['Customer Address']
+        request=AddressSerializer,
+        responses={200: AddressSerializer},
+        tags=["Customer Address"],
     ),
     destroy=extend_schema(
         summary="Soft deletion of customer address",
-        description = "We have added soft delete to delete customer address",
-        request= AddressSerializer,
-        responses={
-            204:{}
-        },
-        tags=['Customer Address']
+        description="We have added soft delete to delete customer address",
+        request=AddressSerializer,
+        responses={204: {}},
+        tags=["Customer Address"],
     ),
 )
 class AddressViewSet(viewsets.ModelViewSet):
     """
     Customer Viewset to manage customer addresses.
     """
+
     permission_classes = [IsAuthenticated, IsCustomer]
     serializer_class = AddressSerializer
-    http_method_names = ['get', 'post', 'patch','delete']
+    http_method_names = ["get", "post", "patch", "delete"]
     throttle_classes = [CustomerRateThrottle]
 
     def get_queryset(self):
-        """ Only customers can manage own addresses only"""
+        """Only customers can manage own addresses only"""
         if not self.request.user.is_authenticated:
             return UserSelector.get_none_address()
         return UserSelector.get_address_queryset(user=self.request.user)
-    
+
     def perform_destroy(self, instance):
-        """ Method to soft delete the address. """
+        """Method to soft delete the address."""
         UserService.soft_delete(user=instance)
